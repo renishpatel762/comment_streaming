@@ -1,0 +1,16 @@
+services:
+  comment_streaming:
+    build: .
+    env_file:
+      - .env
+    # ports:
+    #   - "${PORT}:${PORT}"  # Exposes the container port (if you need direct access)    deploy:
+    deploy:
+      replicas: 3
+    networks:
+      - live_comments_network
+
+networks:
+  live_comments_network:
+    external: true
+    name: live_comments_network

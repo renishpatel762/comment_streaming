@@ -8,7 +8,8 @@ dotenv.config();
 const app = express();
 
 // Use environment variable for Redis URL or default to localhost
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = process.env.REDIS_PORT || "6379";
 const CHANNEL = `live-comments`;
 
 // Global mapping: videoId => array of SSE responses
@@ -16,7 +17,12 @@ const CHANNEL = `live-comments`;
 const connections: Record<string, Response[]> = {};
 
 async function startSubscriber() {
-  const subscriber = createClient({ url: REDIS_URL });
+  const subscriber = createClient({
+    socket: {
+      host: REDIS_HOST,
+      port: parseInt(REDIS_PORT),
+    },
+  });
 
   subscriber.on("error", (err) => console.error("Redis Error:", err));
 
@@ -28,9 +34,9 @@ async function startSubscriber() {
     try {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
-  
+
       console.log(`Received message for video ${videoId}:`, msg);
-      
+
       if (connections[videoId]) {
         connections[videoId].forEach((client) => {
           client.write(`data: ${JSON.stringify(msg)}\n\n`); // Ensure JSON format
@@ -45,14 +51,12 @@ async function startSubscriber() {
 //TODO: handle letter
 //       await subscriber.disconnect();
 
-
 // SSE endpoint to stream live comments for a video
 app.get(
   "/videos/:videoId/comments/stream",
   async (req: Request, res: Response) => {
     const { videoId } = req.params;
 
-    
     // Set SSE headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -64,7 +68,7 @@ app.get(
       connections[videoId] = [];
     }
     connections[videoId].push(res);
-    
+
     // Clean up when the client disconnects
     req.on("close", async () => {
       console.log(`Client disconnected from video ${videoId}`);
