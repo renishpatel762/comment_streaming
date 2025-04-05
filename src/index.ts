@@ -1,9 +1,9 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express, { Request, Response } from "express";
 import { createClient } from "redis";
-import dotenv from "dotenv";
 import { IComment } from "./interfaces";
 
-dotenv.config();
 
 const app = express();
 
