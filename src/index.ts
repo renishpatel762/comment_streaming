@@ -14,7 +14,7 @@ const CHANNEL = `live-comments`;
 
 // Global mapping: videoId => array of SSE responses
 // TODO: change to Map ?
-const connections: Record<string, Response[]> = {};
+const connections= new Map<string, Response[]>();
 
 async function startSubscriber() {
   const subscriber = createClient({
@@ -37,8 +37,9 @@ async function startSubscriber() {
 
       console.log(`Received message for video ${videoId}:`, msg);
 
-      if (connections[videoId]) {
-        connections[videoId].forEach((client) => {
+      if (connections.has(videoId)) {
+        const clients = connections.get(videoId)!; // `!` asserts it's not undefined
+        clients.forEach((client) => {
           client.write(`data: ${JSON.stringify(msg)}\n\n`); // Ensure JSON format
         });
       }
@@ -63,11 +64,10 @@ app.get(
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
 
-    // Add the response object to the mapping for this videoId
-    if (!connections[videoId]) {
-      connections[videoId] = [];
+    if (!connections.has(videoId)) {
+      connections.set(videoId, []);
     }
-    connections[videoId].push(res);
+    connections.get(videoId)!.push(res);
 
     // Clean up when the client disconnects
     req.on("close", async () => {
