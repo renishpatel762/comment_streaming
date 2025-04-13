@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { createClient } from "redis";
 import dotenv from "dotenv";
+import cors from "cors";
 import { IComment } from "./interfaces";
 
 dotenv.config();
@@ -31,9 +32,11 @@ async function startSubscriber() {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
       console.log(`[${new Date().toISOString()}] Received message for video ${videoId}: ${message}`);
+      console.log('connections: ', connections[videoId].length);
 
       if (connections[videoId]) {
         connections[videoId].forEach((client) => {
+          console.log("Writing message for client");
           client.write(`data: ${JSON.stringify(msg)}\n\n`); // Ensure JSON format
         });
       }
@@ -45,6 +48,8 @@ async function startSubscriber() {
 
 //TODO: handle letter
 //       await subscriber.disconnect();
+
+app.use(cors());
 
 // SSE endpoint to stream live comments for a video
 app.get(
@@ -64,6 +69,7 @@ app.get(
     }
     connections[videoId].push(res);
 
+    console.log(`Client connected from video ${videoId}`);
     // Clean up when the client disconnects
     req.on("close", async () => {
       console.log(`Client disconnected from video ${videoId}`);
