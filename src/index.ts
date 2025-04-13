@@ -8,8 +8,7 @@ dotenv.config();
 const app = express();
 
 // Use environment variable for Redis URL or default to localhost
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = process.env.REDIS_PORT || "6379";
+const REDIS_URL = process.env.REDIS_URL;
 const CHANNEL = `live-comments`;
 
 // Global mapping: videoId => array of SSE responses
@@ -18,10 +17,7 @@ const connections: Record<string, Response[]> = {};
 
 async function startSubscriber() {
   const subscriber = createClient({
-    socket: {
-      host: REDIS_HOST,
-      port: parseInt(REDIS_PORT),
-    },
+    url: REDIS_URL
   });
 
   subscriber.on("error", (err) => console.error("Redis Error:", err));
@@ -34,8 +30,7 @@ async function startSubscriber() {
     try {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
-
-      console.log(`Received message for video ${videoId}:`, msg);
+      console.log(`[${new Date().toISOString()}] Received message for vide ${videoId}: ${msg}`);
 
       if (connections[videoId]) {
         connections[videoId].forEach((client) => {
