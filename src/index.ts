@@ -30,7 +30,7 @@ async function startSubscriber() {
     try {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
-      console.log(`[${new Date().toISOString()}] Received message for vide ${videoId}: ${msg}`);
+      console.log(`[${new Date().toISOString()}] Received message for video ${videoId}: ${message}`);
 
       if (connections[videoId]) {
         connections[videoId].forEach((client) => {
