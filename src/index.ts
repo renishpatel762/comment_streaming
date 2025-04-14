@@ -2,14 +2,14 @@ import dotenv from "dotenv";
 dotenv.config();
 import express, { Request, Response } from "express";
 import { createClient } from "redis";
+import cors from "cors";
 import { IComment } from "./interfaces";
 
 
 const app = express();
 
 // Use environment variable for Redis URL or default to localhost
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = process.env.REDIS_PORT || "6379";
+const REDIS_URL = process.env.REDIS_URL;
 const CHANNEL = `live-comments`;
 
 // Global mapping: videoId => array of SSE responses
@@ -18,10 +18,7 @@ const connections= new Map<string, Response[]>();
 
 async function startSubscriber() {
   const subscriber = createClient({
-    socket: {
-      host: REDIS_HOST,
-      port: parseInt(REDIS_PORT),
-    },
+    url: REDIS_URL
   });
 
   subscriber.on("error", (err) => console.error("Redis Error:", err));
@@ -34,8 +31,8 @@ async function startSubscriber() {
     try {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
-
-      console.log(`Received message for video ${videoId}:`, msg);
+      console.log(`[${new Date().toISOString()}] Received message for video ${videoId}: ${message}`);
+      console.log('connections: ', connections[videoId].length);
 
       if (connections.has(videoId)) {
         const clients = connections.get(videoId)!; // `!` asserts it's not undefined
@@ -51,6 +48,8 @@ async function startSubscriber() {
 
 //TODO: handle letter
 //       await subscriber.disconnect();
+
+app.use(cors());
 
 // SSE endpoint to stream live comments for a video
 app.get(
@@ -69,6 +68,7 @@ app.get(
     }
     connections.get(videoId)!.push(res);
 
+    console.log(`Client connected from video ${videoId}`);
     // Clean up when the client disconnects
     req.on("close", async () => {
       console.log(`Client disconnected from video ${videoId}`);
