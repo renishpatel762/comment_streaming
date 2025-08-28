@@ -32,7 +32,6 @@ async function startSubscriber() {
       const msg: IComment = JSON.parse(message); // Parse message from Redis
       const { videoId } = msg;
       console.log(`[${new Date().toISOString()}] Received message for video ${videoId}: ${message}`);
-      console.log('connections: ', connections[videoId].length);
 
       if (connections.has(videoId)) {
         const clients = connections.get(videoId)!; // `!` asserts it's not undefined
@@ -56,6 +55,7 @@ app.get(
   "/videos/:videoId/comments/stream",
   async (req: Request, res: Response) => {
     const { videoId } = req.params;
+    console.log("connection started for videoId",videoId);
 
     // Set SSE headers
     res.setHeader("Content-Type", "text/event-stream");
