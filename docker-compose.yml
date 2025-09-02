@@ -9,6 +9,9 @@ services:
       replicas: 3
     networks:
       - live_comments_network
+    labels:
+      - "logging=promtail"
+      - "service=comment_publisher"
 
 networks:
   live_comments_network:

@@ -1,5 +1,7 @@
 export interface IComment{
+    id: string,
     videoId: string,
     cmtText: string,
-    time: Date 
+    time: Date,
+    author: string
 }
