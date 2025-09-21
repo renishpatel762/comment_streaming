@@ -13,7 +13,7 @@ import {
   activeConnections,
   register 
 } from "./metrics";
-import { logger } from "./logs/lokiLogger";
+import { logger } from "./log_monitor/lokiLogger";
 import os from "os";
 
 const app = express();
